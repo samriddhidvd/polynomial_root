@@ -1,0 +1,89 @@
+#include <bits/stdc++.h>
+#include "json.hpp"   // Include nlohmann/json.hpp
+using namespace std;
+using json = nlohmann::json;
+
+// Function to convert a string number from any base to decimal
+long long convertToDecimal(string value, int base) {
+    long long result = 0;
+    for (char c : value) {
+        int digit;
+        if (isdigit(c)) digit = c - '0';
+        else if (isalpha(c)) digit = tolower(c) - 'a' + 10; // supports bases > 10
+        else continue;
+        result = result * base + digit;
+    }
+    return result;
+}
+
+// Multiply polynomial by (x - root)
+vector<long long> multiplyPolynomials(vector<long long> poly, long long root) {
+    vector<long long> result(poly.size() + 1, 0);
+
+    for (size_t i = 0; i < poly.size(); i++) {
+        result[i] += poly[i];              // coefficient of x^i
+        result[i + 1] += -root * poly[i];  // multiply by -root
+    }
+    return result;
+}
+
+int main() {
+    // Sample JSON input as string (replace with actual JSON from file or stdin)
+    string input = R"(
+    {
+        "keys": {
+            "n": 4,
+            "k": 3
+        },
+        "1": {
+            "base": "10",
+            "value": "4"
+        },
+        "2": {
+            "base": "2",
+            "value": "111"
+        },
+        "3": {
+            "base": "10",
+            "value": "12"
+        },
+        "6": {
+            "base": "4",
+            "value": "213"
+        }
+    })";
+
+    // Parse JSON
+    json j = json::parse(input);
+
+    int n = j["keys"]["n"];
+    int k = j["keys"]["k"];
+
+    // Extract roots
+    vector<long long> roots;
+    int count = 0;
+    for (auto& el : j.items()) {
+        if (el.key() == "keys") continue;
+        int base = stoi(el.value()["base"].get<string>());
+        string value = el.value()["value"].get<string>();
+        long long decimalValue = convertToDecimal(value, base);
+        roots.push_back(decimalValue);
+        count++;
+        if (count == k) break;  // only need first k roots
+    }
+
+    // Build polynomial
+    vector<long long> poly = {1}; // Start with P(x) = 1
+    for (long long r : roots) {
+        poly = multiplyPolynomials(poly, r);
+    }
+
+    // Print coefficients
+    cout << "Polynomial Coefficients: ";
+    for (long long coeff : poly) {
+        cout << coeff << " ";
+    }
+    cout << endl;
+
+    return 0;
+}
